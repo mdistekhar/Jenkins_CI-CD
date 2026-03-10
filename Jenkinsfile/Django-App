@@ -1,0 +1,37 @@
+pipeline {
+    agent { label 'agent-1' }
+
+    stages {
+
+        stage('Code') {
+            steps {
+                echo "Cloning the code"
+                git branch: 'main', url: 'https://github.com/LondheShubham153/django-notes-app.git'
+                echo 'Code Cloning Successfully .'
+            }
+        }
+
+        stage('Build') {
+            steps {
+                echo "This is Building the code"
+                sh 'docker build -t django-app:latest .'
+                echo ' Building Docker image Successfully............'
+            }
+        }
+
+        stage('Test') {
+            steps {
+                echo "Testing the Code"
+            }
+        }
+
+        stage('Deploy') {
+            steps {
+                echo " This is Deploying the Code"
+                sh ' docker run -d -p 8000:8000 django-app:latest'
+                echo ' Django Application Deployed Successfully..........'
+            }
+        }
+
+    }
+}
