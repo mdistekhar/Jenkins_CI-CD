@@ -1,17 +1,41 @@
 pipeline {
-    agent any
+    agent { label 'agent-1' }
 
     stages {
-        stage('Code') {
+
+        stage('Clone Code') {
             steps {
-                echo 'Fetching code'
+                echo 'Cloning the Code...'
+                git branch: 'main',
+                url: 'https://github.com/mdistekhar/Blinkit-Clone.git'
                 echo 'Code Cloning Successfully'
             }
         }
 
         stage('Build') {
             steps {
-                echo 'Building project'
+                echo 'Building the Application'
+                sh 'docker build -t blinkit-app .'
+                echo 'Building application image successfully'
+            }
+        }
+
+        stage('Push to DockerHub') {
+            steps {
+                echo 'Pushing image to DockerHub'
+
+                withCredentials([usernamePassword(
+                    credentialsId: 'dockerhubCred',
+                    usernameVariable: 'DOCKERHUB_USER',
+                    passwordVariable: 'DOCKERHUB_PASS'
+                )]) {
+
+                    sh '''
+                    echo $DOCKERHUB_PASS | docker login -u $DOCKERHUB_USER --password-stdin
+                    docker tag blinkit-app:latest $DOCKERHUB_USER/blinkit-app:latest
+                    docker push $DOCKERHUB_USER/blinkit-app:latest
+                    '''
+                }
             }
         }
 
@@ -23,8 +47,10 @@ pipeline {
 
         stage('Deploy') {
             steps {
-                echo 'Deploying project'
+                echo 'Deploying Application on EC2'
+                sh 'docker run -d -p 8000:80 blinkit-app'
             }
         }
+
     }
 }
